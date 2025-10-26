@@ -1,235 +1,70 @@
-# 🎰 Guide de Déploiement Casino
+# Getting Started with Create React App
 
-## 📋 Prérequis
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-- Node.js et npm installés
-- MetaMask installé dans votre navigateur
-- Des ETH de testnet (Sepolia recommandé)
+## Available Scripts
 
-## 🔧 Étape 1 : Obtenir des ETH de testnet
+In the project directory, you can run:
 
-### Sepolia Testnet (recommandé)
-1. Allez sur https://sepoliafaucet.com/
-2. Connectez votre wallet MetaMask
-3. Demandez des ETH de test (0.5 ETH gratuit)
+### `npm start`
 
-### Autres faucets :
-- https://faucets.chain.link/sepolia
-- https://www.alchemy.com/faucets/ethereum-sepolia
+Runs the app in the development mode.\
+Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
-## 🚀 Étape 2 : Déployer le Smart Contract
+The page will reload when you make changes.\
+You may also see any lint errors in the console.
 
-### Option A : Avec Remix (Facile)
+### `npm test`
 
-1. **Allez sur Remix** : https://remix.ethereum.org
-2. **Créez un nouveau fichier** `Casino.sol` et collez le code du contrat
-3. **Compilez** :
-   - Cliquez sur l'icône "Solidity Compiler"
-   - Sélectionnez version `0.8.20`
-   - Cliquez "Compile Casino.sol"
+Launches the test runner in the interactive watch mode.\
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-4. **Déployez** :
-   - Cliquez sur "Deploy & Run Transactions"
-   - Environment : sélectionnez "Injected Provider - MetaMask"
-   - Vérifiez que vous êtes sur Sepolia dans MetaMask
-   - Dans le champ du constructeur, entrez :
-     ```
-     _minEntry: 10000000000000000 (0.01 ETH en wei)
-     _roundDuration: 300 (5 minutes en secondes)
-     ```
-   - Cliquez "Deploy" et confirmez dans MetaMask
-   
-5. **Copiez l'adresse** du contrat déployé (elle apparaîtra en bas)
+### `npm run build`
 
-### Option B : Avec Hardhat (Avancé)
+Builds the app for production to the `build` folder.\
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-```bash
-# Créer un projet
-mkdir casino-contract
-cd casino-contract
-npm init -y
-npm install --save-dev hardhat @nomicfoundation/hardhat-toolbox
+The build is minified and the filenames include the hashes.\
+Your app is ready to be deployed!
 
-# Initialiser Hardhat
-npx hardhat init
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-# Créer le fichier de déploiement
-# scripts/deploy.js
-```
+### `npm run eject`
 
-```javascript
-async function main() {
-  const Casino = await ethers.getContractFactory("Casino");
-  const casino = await Casino.deploy(
-    ethers.utils.parseEther("0.01"), // minEntry
-    300 // roundDuration (5 minutes)
-  );
-  await casino.deployed();
-  console.log("Casino deployed to:", casino.address);
-}
+**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
-```
+If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-```bash
-# Déployer
-npx hardhat run scripts/deploy.js --network sepolia
-```
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-## 💻 Étape 3 : Configurer l'Interface
+You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
-1. **Mettez à jour l'adresse du contrat** dans l'interface React :
-   ```javascript
-   const CONTRACT_ADDRESS = "VOTRE_ADRESSE_ICI";
-   ```
+## Learn More
 
-2. **Configurez MetaMask** :
-   - Réseau : Sepolia Testnet
-   - Chain ID : 11155111
-   - RPC URL : https://sepolia.infura.io/v3/YOUR-API-KEY
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-## 🌐 Étape 4 : Déployer l'Interface
+To learn React, check out the [React documentation](https://reactjs.org/).
 
-### Option A : CodeSandbox (Rapide)
-1. Allez sur https://codesandbox.io
-2. Créez un nouveau projet React
-3. Collez le code de l'interface
-4. L'URL sera générée automatiquement
+### Code Splitting
 
-### Option B : Netlify (Professionnel)
+This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
 
-```bash
-# Créer un projet React
-npx create-react-app casino-frontend
-cd casino-frontend
+### Analyzing the Bundle Size
 
-# Installer les dépendances
-npm install ethers lucide-react
+This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
 
-# Remplacer src/App.js avec le code de l'interface
-# Ajouter dans public/index.html avant </body> :
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+### Making a Progressive Web App
 
-# Build
-npm run build
+This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-# Déployer sur Netlify
-# 1. Créez un compte sur https://netlify.com
-# 2. Drag & drop le dossier "build"
-```
+### Advanced Configuration
 
-### Option C : GitHub Pages
+This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
 
-```bash
-# Dans package.json, ajoutez :
-"homepage": "https://VOTRE-USERNAME.github.io/casino",
+### Deployment
 
-# Installez gh-pages
-npm install --save-dev gh-pages
+This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
 
-# Ajoutez dans scripts:
-"predeploy": "npm run build",
-"deploy": "gh-pages -d build"
+### `npm run build` fails to minify
 
-# Déployez
-npm run deploy
-```
-
-## ⚙️ Configuration Avancée
-
-### Modifier la durée des rounds
-```solidity
-// Dans le constructeur ou après déploiement :
-300 secondes = 5 minutes
-600 secondes = 10 minutes
-1800 secondes = 30 minutes
-```
-
-### Modifier la mise minimum
-```javascript
-// En wei (18 décimales)
-0.01 ETH = 10000000000000000 wei
-0.1 ETH = 100000000000000000 wei
-1 ETH = 1000000000000000000 wei
-```
-
-## 🎮 Test du Casino
-
-1. **Connectez plusieurs wallets** (créez plusieurs comptes MetaMask)
-2. **Entrez dans le casino** avec chaque wallet
-3. **Attendez** la fin du timer
-4. **Cliquez sur "Tirer au sort"** avec n'importe quel wallet
-5. **Vérifiez** que le gagnant reçoit 95% du pot
-
-## 🔒 Sécurité
-
-⚠️ **IMPORTANT pour la production** :
-
-Le contrat actuel utilise `block.timestamp` et `block.prevrandao` pour le random, ce qui n'est **PAS sécurisé** pour de l'argent réel.
-
-Pour la production, utilisez **Chainlink VRF** :
-```solidity
-// Installation
-npm install @chainlink/contracts
-
-// Intégration VRF
-import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
-```
-
-## 📊 Monitoring
-
-### Voir les transactions sur Etherscan
-- Sepolia : https://sepolia.etherscan.io/address/VOTRE_ADRESSE
-
-### Événements à surveiller
-- `PlayerEntered` : Nouveau joueur
-- `RoundDrawn` : Tirage effectué
-- `NewRoundStarted` : Nouveau round
-
-## 🐛 Dépannage
-
-**Erreur "User rejected transaction"**
-→ L'utilisateur a annulé dans MetaMask
-
-**Erreur "Entry too small"**
-→ Augmentez le montant (minimum 0.01 ETH)
-
-**Erreur "Round not finished"**
-→ Attendez la fin du timer
-
-**Interface ne charge pas**
-→ Vérifiez que MetaMask est connecté à Sepolia
-
-## 📱 Testnets Recommandés
-
-| Testnet | Chain ID | Faucet | Explorer |
-|---------|----------|--------|----------|
-| Sepolia | 11155111 | sepoliafaucet.com | sepolia.etherscan.io |
-| Mumbai (Polygon) | 80001 | faucet.polygon.technology | mumbai.polygonscan.com |
-| BSC Testnet | 97 | testnet.bnbchain.org/faucet-smart | testnet.bscscan.com |
-
-## 🎯 Prochaines Étapes
-
-1. ✅ Déployer sur testnet
-2. ✅ Tester avec plusieurs wallets
-3. ⬜ Ajouter Chainlink VRF pour production
-4. ⬜ Audit de sécurité
-5. ⬜ Déployer sur mainnet
-
-## 💡 Améliorations Possibles
-
-- Ajouter un système de tickets (1 ticket = 1 chance)
-- Historique complet de tous les rounds
-- Statistiques des joueurs
-- Multiple pools simultanés
-- NFT pour les gagnants
-- Programme de référencement
-
----
-
-**Besoin d'aide ?** Vérifiez la console du navigateur (F12) pour les erreurs détaillées.
-
-**Testnet ETH gratuit** disponible sur tous les faucets listés ci-dessus.
+This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
