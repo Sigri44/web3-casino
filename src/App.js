@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Coins, Users, Clock, Trophy, Wallet } from 'lucide-react';
+import { ethers } from 'ethers';
 
 const CONTRACT_ADDRESS = "0x6E425e70119637DAa8026b008B2402426a44C2d9";
 const CONTRACT_ABI = [
@@ -69,9 +70,10 @@ export default function CasinoApp() {
         method: 'eth_requestAccounts' 
       });
       
-      const ethersProvider = new window.ethers.providers.Web3Provider(window.ethereum);
-      const signer = ethersProvider.getSigner();
-      const casinoContract = new window.ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      // Utiliser BrowserProvider pour ethers v6
+      const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await ethersProvider.getSigner();
+      const casinoContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       
       setAccount(accounts[0]);
       setProvider(ethersProvider);
@@ -94,35 +96,35 @@ export default function CasinoApp() {
         contract.currentRoundId()
       ]);
 
-      setPot(window.ethers.utils.formatEther(potValue));
+      setPot(ethers.formatEther(potValue));
       setPlayers(playersList);
-      setMinEntry(window.ethers.utils.formatEther(minEntryValue));
+      setMinEntry(ethers.formatEther(minEntryValue));
       setCanDraw(canDrawValue);
-      setCurrentRoundId(roundId.toNumber());
+      setCurrentRoundId(Number(roundId));
 
       if (account) {
         const contribution = await contract.getPlayerContribution(account);
-        setMyContribution(window.ethers.utils.formatEther(contribution));
+        setMyContribution(ethers.formatEther(contribution));
       }
 
       // Load round info for timer
       const roundInfo = await contract.getRoundInfo(roundId);
-      const startTime = roundInfo[1].toNumber();
+      const startTime = Number(roundInfo[1]);
       const duration = await contract.roundDuration();
-      const endTime = startTime + duration.toNumber();
+      const endTime = startTime + Number(duration);
       const now = Math.floor(Date.now() / 1000);
       setTimeLeft(Math.max(0, endTime - now));
 
       // Load history
-      if (roundId.toNumber() > 1) {
+      if (Number(roundId) > 1) {
         const history = [];
-        for (let i = Math.max(1, roundId.toNumber() - 5); i < roundId.toNumber(); i++) {
+        for (let i = Math.max(1, Number(roundId) - 5); i < Number(roundId); i++) {
           const info = await contract.getRoundInfo(i);
           if (info[4]) { // if drawn
             history.push({
               roundId: i,
               winner: info[3],
-              pot: window.ethers.utils.formatEther(info[2])
+              pot: ethers.formatEther(info[2])
             });
           }
         }
@@ -139,7 +141,7 @@ export default function CasinoApp() {
     try {
       setLoading(true);
       const tx = await contract.enter({
-        value: window.ethers.utils.parseEther(entryAmount)
+        value: ethers.parseEther(entryAmount)
       });
       await tx.wait();
       await loadContractData();
@@ -211,7 +213,7 @@ export default function CasinoApp() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">POT ACTUEL</p>
-                    <p className="text-3xl font-bold">{parseFloat(pot).toFixed(4)} ETH</p>
+                    <p className="text-3xl font-bold">{pot ? parseFloat(pot).toFixed(4) : '0.0000'} ETH</p>
                     <p className="text-xs mt-1">95% au gagnant</p>
                   </div>
                   <Coins size={48} className="opacity-50" />
@@ -222,7 +224,7 @@ export default function CasinoApp() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">JOUEURS</p>
-                    <p className="text-3xl font-bold">{players.length}</p>
+                    <p className="text-3xl font-bold">{players ? players.length : 0}</p>
                     <p className="text-xs mt-1">participants</p>
                   </div>
                   <Users size={48} className="opacity-50" />
@@ -245,7 +247,7 @@ export default function CasinoApp() {
             <div className="bg-black bg-opacity-50 p-8 rounded-xl mb-8 backdrop-blur">
               <h2 className="text-2xl font-bold mb-4">🎲 Entrer dans la partie</h2>
               <p className="text-gray-300 mb-4">
-                Mise minimum: {minEntry} ETH | Votre contribution: {myContribution} ETH
+                Mise minimum: {minEntry || '0'} ETH | Votre contribution: {myContribution || '0'} ETH
               </p>
               <div className="flex gap-4">
                 <input
@@ -256,10 +258,11 @@ export default function CasinoApp() {
                   min={minEntry}
                   className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white"
                   placeholder="Montant en ETH"
+                  disabled={!contract}
                 />
                 <button
                   onClick={enterCasino}
-                  disabled={loading}
+                  disabled={loading || !contract}
                   className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105"
                 >
                   {loading ? 'Chargement...' : 'ENTRER'}
@@ -284,21 +287,21 @@ export default function CasinoApp() {
             {/* Players List */}
             <div className="bg-black bg-opacity-50 p-8 rounded-xl mb-8 backdrop-blur">
               <h2 className="text-2xl font-bold mb-4">👥 Joueurs actuels</h2>
-              {players.length === 0 ? (
+              {!players || players.length === 0 ? (
                 <p className="text-gray-400">Aucun joueur pour le moment...</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                   {players.map((player, i) => (
                     <div
-                      key={i}
+                      key={`${player}-${i}`}
                       className={`p-3 rounded-lg ${
-                        player.toLowerCase() === account.toLowerCase()
+                        account && player.toLowerCase() === account.toLowerCase()
                           ? 'bg-green-900 border-2 border-green-500'
                           : 'bg-gray-800'
                       }`}
                     >
                       {formatAddress(player)}
-                      {player.toLowerCase() === account.toLowerCase() && ' (Vous)'}
+                      {account && player.toLowerCase() === account.toLowerCase() && ' (Vous)'}
                     </div>
                   ))}
                 </div>
@@ -306,7 +309,7 @@ export default function CasinoApp() {
             </div>
 
             {/* History */}
-            {roundHistory.length > 0 && (
+            {roundHistory && roundHistory.length > 0 && (
               <div className="bg-black bg-opacity-50 p-8 rounded-xl backdrop-blur">
                 <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
                   <Trophy size={24} className="text-yellow-500" />
@@ -333,9 +336,6 @@ export default function CasinoApp() {
           </>
         )}
       </div>
-
-      {/* Ethers.js CDN */}
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     </div>
   );
 }
