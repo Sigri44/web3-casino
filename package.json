@@ -1,7 +1,7 @@
 {
   "name": "web3-casino",
   "version": "0.1.0",
-  "homepage": "https://github.com/Sigri44/web3-casino",
+  "homepage": "https://sigri44.github.io/web3-casino/",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
