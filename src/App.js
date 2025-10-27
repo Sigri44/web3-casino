@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Coins, Users, Clock, Trophy, Wallet } from 'lucide-react';
 import { ethers } from 'ethers';
+import './App.css';
 
 const CONTRACT_ADDRESS = "0x6E425e70119637DAa8026b008B2402426a44C2d9";
 const CONTRACT_ABI = [
@@ -39,9 +40,9 @@ export default function CasinoApp() {
   }, []);
 
   useEffect(() => {
-    if (contract) {
+    if (contract && account) {
       loadContractData();
-      const interval = setInterval(loadContractData, 3000);
+      const interval = setInterval(loadContractData, 5000);
       return () => clearInterval(interval);
     }
   }, [contract, account]);
@@ -70,8 +71,31 @@ export default function CasinoApp() {
         method: 'eth_requestAccounts' 
       });
       
-      // Utiliser BrowserProvider pour ethers v6
       const ethersProvider = new ethers.BrowserProvider(window.ethereum);
+      
+      // Vérifier le réseau
+      const network = await ethersProvider.getNetwork();
+      const chainId = Number(network.chainId);
+      
+      if (chainId !== 11155111) {
+        const switchNetwork = window.confirm(
+          `Vous êtes sur le réseau ${chainId}. Voulez-vous basculer sur Sepolia ?`
+        );
+        if (switchNetwork) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0xaa36a7' }],
+            });
+          } catch (switchError) {
+            console.error('Error switching network:', switchError);
+            return;
+          }
+        } else {
+          return;
+        }
+      }
+      
       const signer = await ethersProvider.getSigner();
       const casinoContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
       
@@ -120,7 +144,7 @@ export default function CasinoApp() {
         const history = [];
         for (let i = Math.max(1, Number(roundId) - 5); i < Number(roundId); i++) {
           const info = await contract.getRoundInfo(i);
-          if (info[4]) { // if drawn
+          if (info[4]) {
             history.push({
               roundId: i,
               winner: info[3],
@@ -131,7 +155,8 @@ export default function CasinoApp() {
         setRoundHistory(history.reverse());
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      // Silencieux - normal pendant le chargement initial
+      console.log('Loading contract data...');
     }
   };
 
@@ -148,7 +173,7 @@ export default function CasinoApp() {
       alert('Vous êtes entré dans le casino! 🎰');
     } catch (error) {
       console.error('Error entering casino:', error);
-      alert('Erreur lors de l\'entrée');
+      alert('Erreur: ' + (error.reason || error.message));
     } finally {
       setLoading(false);
     }
@@ -165,7 +190,7 @@ export default function CasinoApp() {
       alert('Tirage effectué! Vérifiez le gagnant 🏆');
     } catch (error) {
       console.error('Error drawing:', error);
-      alert('Erreur lors du tirage');
+      alert('Erreur: ' + (error.reason || error.message));
     } finally {
       setLoading(false);
     }
@@ -183,24 +208,23 @@ export default function CasinoApp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-red-900 to-black text-white p-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="app-container">
+      <div className="app-content">
         {/* Header */}
-        <div className="text-center mb-8 py-8">
-          <h1 className="text-6xl font-bold mb-2 animate-pulse">🎰 CASINO</h1>
-          <p className="text-xl text-gray-300">No Crying in the Casino!</p>
+        <div className="header">
+          <h1 className="title">🎰 CASINO</h1>
+          <p className="subtitle">No Crying in the Casino!</p>
           {!account && (
-            <button
-              onClick={connectWallet}
-              className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105"
-            >
-              <Wallet className="inline mr-2" size={20} />
+            <button onClick={connectWallet} className="btn-connect">
+              <Wallet className="icon-inline" size={20} />
               Connecter Wallet
             </button>
           )}
           {account && (
-            <div className="mt-4 text-green-400">
+            <div className="connected">
               Connecté: {formatAddress(account)}
+              <br />
+              <span className="network-info">Réseau: Sepolia</span>
             </div>
           )}
         </div>
@@ -208,62 +232,62 @@ export default function CasinoApp() {
         {account && (
           <>
             {/* Main Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 p-6 rounded-xl shadow-2xl">
-                <div className="flex items-center justify-between">
+            <div className="stats-grid">
+              <div className="stat-card stat-pot">
+                <div className="stat-content">
                   <div>
-                    <p className="text-sm opacity-90">POT ACTUEL</p>
-                    <p className="text-3xl font-bold">{pot ? parseFloat(pot).toFixed(4) : '0.0000'} ETH</p>
-                    <p className="text-xs mt-1">95% au gagnant</p>
+                    <p className="stat-label">POT ACTUEL</p>
+                    <p className="stat-value">{pot ? parseFloat(pot).toFixed(4) : '0.0000'} ETH</p>
+                    <p className="stat-subtitle">95% au gagnant</p>
                   </div>
-                  <Coins size={48} className="opacity-50" />
+                  <Coins size={48} className="stat-icon" />
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-600 to-blue-800 p-6 rounded-xl shadow-2xl">
-                <div className="flex items-center justify-between">
+              <div className="stat-card stat-players">
+                <div className="stat-content">
                   <div>
-                    <p className="text-sm opacity-90">JOUEURS</p>
-                    <p className="text-3xl font-bold">{players ? players.length : 0}</p>
-                    <p className="text-xs mt-1">participants</p>
+                    <p className="stat-label">JOUEURS</p>
+                    <p className="stat-value">{players ? players.length : 0}</p>
+                    <p className="stat-subtitle">participants</p>
                   </div>
-                  <Users size={48} className="opacity-50" />
+                  <Users size={48} className="stat-icon" />
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-600 to-red-800 p-6 rounded-xl shadow-2xl">
-                <div className="flex items-center justify-between">
+              <div className="stat-card stat-time">
+                <div className="stat-content">
                   <div>
-                    <p className="text-sm opacity-90">TEMPS RESTANT</p>
-                    <p className="text-3xl font-bold">{formatTime(timeLeft)}</p>
-                    <p className="text-xs mt-1">jusqu'au tirage</p>
+                    <p className="stat-label">TEMPS RESTANT</p>
+                    <p className="stat-value">{formatTime(timeLeft)}</p>
+                    <p className="stat-subtitle">jusqu'au tirage</p>
                   </div>
-                  <Clock size={48} className="opacity-50" />
+                  <Clock size={48} className="stat-icon" />
                 </div>
               </div>
             </div>
 
             {/* Enter Section */}
-            <div className="bg-black bg-opacity-50 p-8 rounded-xl mb-8 backdrop-blur">
-              <h2 className="text-2xl font-bold mb-4">🎲 Entrer dans la partie</h2>
-              <p className="text-gray-300 mb-4">
+            <div className="section">
+              <h2 className="section-title">🎲 Entrer dans la partie</h2>
+              <p className="section-subtitle">
                 Mise minimum: {minEntry || '0'} ETH | Votre contribution: {myContribution || '0'} ETH
               </p>
-              <div className="flex gap-4">
+              <div className="entry-form">
                 <input
                   type="number"
                   value={entryAmount}
                   onChange={(e) => setEntryAmount(e.target.value)}
                   step="0.01"
                   min={minEntry}
-                  className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white"
+                  className="input-amount"
                   placeholder="Montant en ETH"
                   disabled={!contract}
                 />
                 <button
                   onClick={enterCasino}
                   disabled={loading || !contract}
-                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 px-8 py-3 rounded-lg font-bold transition-all transform hover:scale-105"
+                  className="btn-enter"
                 >
                   {loading ? 'Chargement...' : 'ENTRER'}
                 </button>
@@ -272,32 +296,28 @@ export default function CasinoApp() {
 
             {/* Draw Button */}
             {canDraw && (
-              <div className="bg-gradient-to-r from-yellow-500 to-red-500 p-8 rounded-xl mb-8 text-center">
-                <h2 className="text-3xl font-bold mb-4">🎉 TIRAGE DISPONIBLE!</h2>
-                <button
-                  onClick={draw}
-                  disabled={loading}
-                  className="bg-white text-black hover:bg-gray-200 disabled:bg-gray-400 px-12 py-4 rounded-full font-bold text-xl transition-all transform hover:scale-110"
-                >
+              <div className="draw-section">
+                <h2 className="draw-title">🎉 TIRAGE DISPONIBLE!</h2>
+                <button onClick={draw} disabled={loading} className="btn-draw">
                   {loading ? 'Tirage...' : 'TIRER AU SORT 🎰'}
                 </button>
               </div>
             )}
 
             {/* Players List */}
-            <div className="bg-black bg-opacity-50 p-8 rounded-xl mb-8 backdrop-blur">
-              <h2 className="text-2xl font-bold mb-4">👥 Joueurs actuels</h2>
+            <div className="section">
+              <h2 className="section-title">👥 Joueurs actuels</h2>
               {!players || players.length === 0 ? (
-                <p className="text-gray-400">Aucun joueur pour le moment...</p>
+                <p className="empty-message">Aucun joueur pour le moment...</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                <div className="players-grid">
                   {players.map((player, i) => (
                     <div
                       key={`${player}-${i}`}
-                      className={`p-3 rounded-lg ${
+                      className={`player-card ${
                         account && player.toLowerCase() === account.toLowerCase()
-                          ? 'bg-green-900 border-2 border-green-500'
-                          : 'bg-gray-800'
+                          ? 'player-card-me'
+                          : ''
                       }`}
                     >
                       {formatAddress(player)}
@@ -310,22 +330,19 @@ export default function CasinoApp() {
 
             {/* History */}
             {roundHistory && roundHistory.length > 0 && (
-              <div className="bg-black bg-opacity-50 p-8 rounded-xl backdrop-blur">
-                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <Trophy size={24} className="text-yellow-500" />
+              <div className="section">
+                <h2 className="section-title">
+                  <Trophy size={24} className="icon-inline" style={{color: '#fbbf24'}} />
                   Historique des gagnants
                 </h2>
-                <div className="space-y-3">
+                <div className="history-list">
                   {roundHistory.map((round) => (
-                    <div
-                      key={round.roundId}
-                      className="bg-gray-800 p-4 rounded-lg flex justify-between items-center"
-                    >
+                    <div key={round.roundId} className="history-card">
                       <div>
-                        <span className="text-yellow-500 font-bold">Round #{round.roundId}</span>
-                        <span className="ml-4">{formatAddress(round.winner)}</span>
+                        <span className="round-number">Round #{round.roundId}</span>
+                        <span className="winner-address">{formatAddress(round.winner)}</span>
                       </div>
-                      <div className="text-green-400 font-bold">
+                      <div className="prize-amount">
                         +{parseFloat(round.pot * 0.95).toFixed(4)} ETH
                       </div>
                     </div>
